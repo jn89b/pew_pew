@@ -14,6 +14,7 @@ class MPC():
 
         self.mpc_params = mpc_params
         self.model = self.mpc_params['model']
+        self.f = self.model.function
         self.dt_val = self.mpc_params['dt_val']
         self.N = self.mpc_params['N']
         self.Q = self.mpc_params['Q']
@@ -38,6 +39,9 @@ class MPC():
             self.X.reshape((-1, 1)),   # Example: 3x11 ---> 33x1 where 3=states, 11=N+1
             self.U.reshape((-1, 1))
         )
+
+        self.g = []
+        self.g = self.X[:,0] - self.P[:self.n_states]
         
     def defineBoundaryConstraints(self):
         """define bound constraints of system"""
@@ -64,9 +68,7 @@ class MPC():
     def computeCost(self):
         #tired of writing self
         #dynamic constraints 
-        self.g = []
-        self.g = self.X[:,0] - self.P[:self.n_states]
-        
+
         P = self.P
         Q = self.Q
         R = self.R
@@ -127,7 +129,7 @@ class MPC():
                     if obstacle == [Config.GOAL_X, Config.GOAL_Y]:
                         continue
                     
-                    self.cost_fn = (self.S* obs_distance)
+                    # self.cost_fn = (self.S* obs_distance)
 
 
     def initSolver(self):

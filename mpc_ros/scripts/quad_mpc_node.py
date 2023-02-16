@@ -14,7 +14,7 @@ from mavros.base import SENSOR_QOS
 #     Quaternion
 
 from mpc_ros import quaternion_tools, MPC, Config
-from mpc_ros.CasadiModels import FlatQuadModel
+from mpc_ros.CasadiModels import FlatQuadModel, SimpleQuadModel
 
 from pymavlink import mavutil
 import pickle as pkl
@@ -33,11 +33,11 @@ class FlatQuadMPC(MPC.MPC):
 
     def warmUpSolution(self, start:list, goal:list) -> tuple:
         self.initDecisionVariables()
+        self.reinitStartGoal(start, goal)
+        self.computeCost()
+        self.initSolver()
         self.defineBoundaryConstraints()
         self.addAdditionalConstraints()
-        self.reinitStartGoal(start, goal)
-        self.initSolver()
-        self.computeCost()
 
         projected_controls,projected_states = self.solveMPCRealTimeStatic(start,goal)
         
@@ -45,31 +45,20 @@ class FlatQuadMPC(MPC.MPC):
 
 
     def addAdditionalConstraints(self) -> None:
-        self.lbx['U'][0,:] = self.quad_constraint_params['thrust_min']
-        self.ubx['U'][0,:] = self.quad_constraint_params['thrust_max']
+        #add additional constraints here
+        self.lbx['U'][0,:] = self.quad_constraint_params['vx_min']
+        self.ubx['U'][0,:] = self.quad_constraint_params['vx_max']
 
-        self.lbx['U'][1,:] = self.quad_constraint_params['thrust_min']
-        self.ubx['U'][1,:] = self.quad_constraint_params['thrust_max']
+        self.lbx['U'][1,:] = self.quad_constraint_params['vy_min']
+        self.ubx['U'][1,:] = self.quad_constraint_params['vy_max']
 
-        self.lbx['U'][2,:] = self.quad_constraint_params['thrust_min']
-        self.ubx['U'][2,:] = self.quad_constraint_params['thrust_max']
+        self.lbx['U'][2,:] = self.quad_constraint_params['vz_min']
+        self.ubx['U'][2,:] = self.quad_constraint_params['vz_max']
 
-        self.lbx['U'][3,:] = self.quad_constraint_params['thrust_min']
-        self.ubx['U'][3,:] = self.quad_constraint_params['thrust_max']
+        self.lbx['U'][3,:] = self.quad_constraint_params['psi_dot_min']
+        self.ubx['U'][3,:] = self.quad_constraint_params['psi_dot_max']
 
-        self.lbx['X'][4,:] = self.quad_constraint_params['vx_min']
-        self.ubx['X'][4,:] = self.quad_constraint_params['vx_max']
-
-        self.lbx['X'][5,:] = self.quad_constraint_params['vy_min']
-        self.ubx['X'][5,:] = self.quad_constraint_params['vy_max']
-
-        self.lbx['X'][6,:] = self.quad_constraint_params['vz_min']
-        self.ubx['X'][6,:] = self.quad_constraint_params['vz_max']
-
-        self.lbx['X'][7,:] = self.quad_constraint_params['psi_dot_min']
-        self.ubx['X'][7,:] = self.quad_constraint_params['psi_dot_max']
-
-
+                                                                
 class QuadNode(Node):
     def __init__(self):
         super().__init__('quad_node')
@@ -77,51 +66,57 @@ class QuadNode(Node):
         self.get_logger().info('QuadNode has been initialized')
 
         self.state_sub = self.create_subscription(mavros.local_position.Odometry,
-                                                  'mavros/local_position/odom', self.position_callback, qos_profile=SENSOR_QOS)
+                                                  'mavros/local_position/odom', 
+                                                  self.positionCallback, 
+                                                  qos_profile=SENSOR_QOS)
 
-        self.state_sub = self.create_subscription(mavros.local_position.PoseStamped,
-                                                  'mavros/local_position/pose', self.pose_callback, qos_profile=SENSOR_QOS)
-
+        # self.state_sub = self.create_subscription(mavros.local_position.PoseStamped,
+        #                                           'mavros/local_position/pose', self.poseCallback, qos_profile=SENSOR_QOS)
         self.state_info = [0, #x 
                            0, #y
                            0, #z
-                           0, #psi
-                           0, #vx
-                           0, #vy
-                           0, #vz
-                           0] #psi_dot
+                           0] #psi
 
-    def position_callback(self,msg):
+        self.control_info = [0, #vx
+                             0, #vy
+                             0, #vz
+                             0] #psi_dot
+
+    def positionCallback(self,msg):
         """get state info between two positions"""
         self.state_info[0] = msg.pose.pose.position.x
         self.state_info[1] = msg.pose.pose.position.y
         self.state_info[2] = msg.pose.pose.position.z
 
-        self.state_info[3] = quaternion_tools.quaternion_to_euler(msg.pose.pose.orientation)[2]
+        qx = msg.pose.pose.orientation.x
+        qy = msg.pose.pose.orientation.y
+        qz = msg.pose.pose.orientation.z
+        qw = msg.pose.pose.orientation.w
 
-        self.state_info[4] = msg.twist.twist.linear.x
-        self.state_info[5] = msg.twist.twist.linear.y
-        self.state_info[6] = msg.twist.twist.linear.z
+        roll, pitch, yaw = quaternion_tools.euler_from_quaternion(qx, qy, qz, qw)
+        self.state_info[3] = yaw
 
-        self.state_info[7] = msg.twist.twist.angular.z
+        self.control_info[0] = msg.twist.twist.linear.x
+        self.control_info[1] = msg.twist.twist.linear.y
+        self.control_info[2] = msg.twist.twist.linear.z
+        self.control_info[3] = msg.twist.twist.angular.z
         
     def computeError(self, state:list, desired_state:list) -> np.ndarray:
         """compute the error between start and desired states"""
-        error = np.zeros((8,1))
+        error = np.zeros((4,1))
         error[0] = desired_state[0] - state[0]
         error[1] = desired_state[1] - state[1]
         error[2] = desired_state[2] - state[2]
         error[3] = desired_state[3] - state[3]
-        error[4] = desired_state[4] - state[4]
-        error[5] = desired_state[5] - state[5]
-        error[6] = desired_state[6] - state[6]
-        error[7] = desired_state[7] - state[7]
 
         return error
 
 def initQuadMPC():
     #should allow user to map these parameters to a yaml file
-    quad_constraint_params = {
+    simple_quad_model = SimpleQuadModel.SimpleQuadModel()
+    simple_quad_model.set_state_space()
+
+    simple_quad_constraint_params = {
         'vx_max': 15.0, #m/s
         'vx_min': -15.0, #m/s
 
@@ -129,29 +124,24 @@ def initQuadMPC():
         'vy_min': -15.0, #m/s
 
         'vz_max': 5.0, #m/s
-        'vz_min': -5.0, #m/s
+        'vz_min': 3.0, #m/s
 
-        'psi_dot_max': np.rad2deg(5.0),#rad/s
-        'psi_dot_min': np.rad2deg(-5.0),#rad/s
+        'psi_dot_max': np.deg2rad(5.0),#rad/s
+        'psi_dot_min': np.deg2rad(-5.0),#rad/s
 
-        'z_min': 5.0, #m
-        'z_max': 20.0, #m
-
-        'thrust_max': 10.0, #N
-        'thrust_min': 0.0, #N
+        'z_min': 20.0, #m
+        'z_max': 50.0, #m
     }
-    
-    flat_quad_model = FlatQuadModel.FlatQuadcopterModel()
-    flat_quad_model.set_state_space()
 
-    mpc_quad_params = {
-        'model': flat_quad_model,
-        'N': 10,
+    simple_mpc_quad_params = {
+        'model': simple_quad_model,
+        'N': 25,
         'dt_val': 0.1,
-        'Q': np.diag([1, 1, 1, 1, 1, 1, 1, 1]),
-        'R': np.diag([1, 1, 1, 1])    
+        'Q': np.diag([1, 1, 1, 0.1]),
+        'R': np.diag([1, 1, 1, 10.0])
     }
-    quad_mpc = FlatQuadMPC(mpc_quad_params, quad_constraint_params)    
+
+    quad_mpc = FlatQuadMPC(simple_mpc_quad_params, simple_quad_constraint_params)
 
     return quad_mpc
 
@@ -160,36 +150,37 @@ def connectMAVUTIL(ip_string:str):
     master.wait_heartbeat()
     return master
 
-def convertToNED(x:float, y:float, z:float) -> np.ndarray:
+def convertToNED(x_enu:float, y_enu:float, z_enu:float) -> np.ndarray:
     """converts from ENU to NED"""
     ned = np.zeros((3,1))
-    ned[0] = y
-    ned[1] = x
-    ned[2] = -z
+    ned[0] = y_enu
+    ned[1] = x_enu
+    ned[2] = -z_enu
     return ned
 
 def mavSendVelocityCMD(master, vx:float, 
-    vy:float, vz:float, yaw_rate:float):
+    vy:float, vz:float, yaw:float):
+    """sends velocity commands in NED world frame"""
+    vel_ned = convertToNED(vx, vy, vz) #ned wrt to world frame
     
-    vel_ned = convertToNED(vx, vy, vz)
-
     master.mav.set_position_target_local_ned_send(
         0, #time_boot_ms
-        1, #target_system
-        1, #target_component
+        master.target_system, #target_system
+        master.target_component, #target_component
         mavutil.mavlink.MAV_FRAME_LOCAL_NED, #coordinate frame
         0b0000111111000111, #type_mask #enable vx, vy, vz, afx, afy, afz
+        # 0b110111111000, #type_mask #enable position
         0, #x
         0, #y
         0, #z
         vel_ned[0], #vx
         vel_ned[1], #vy
-        vel_ned[2], #vz
+        0, #vz
         0, #afx
         0, #afy
         0, #afz
-        0, #yaw
-        yaw_rate) #yaw_rate #r
+        yaw, #yaw
+        0) #yaw_rate #r
 
 def main(args=None):
     rclpy.init()
@@ -203,56 +194,107 @@ def main(args=None):
 
     #get the current time
     t0 = time.time()
-    t_sim_limit = 50.0 #seconds    
-
-    #init the desired state
-    current_state = quad_node.state_info
+    t_sim_limit = 50.0 #seconds        
     desired_state = [Config.GOAL_X, 
-                        Config.GOAL_Y, 
-                        current_state[2], 
-                        current_state[3], 
-                        current_state[4], 
-                        current_state[5], 
-                        current_state[6], 
-                        current_state[7]]
-    
+                     Config.GOAL_Y, 
+                     quad_node.state_info[2]-25.0, 
+                     quad_node.state_info[3]]
+
     projected_controls, projected_states = quad_mpc.warmUpSolution(
-        current_state, desired_state)
+        quad_node.state_info, desired_state)
+
+    print("goal state: ", desired_state)
+
+    error_tolerance = 5.0 #meters
 
     while rclpy.ok() and time.time() - t0 < t_sim_limit:
+
         rclpy.spin_once(quad_node)
 
-        if current_state == [0,0,0,0,0,0,0,0]:
+        # if current_state == [0,0,0,0,0,0,0,0]:
+        if quad_node.state_info == [0,0,0,0]:
             rclpy.spin_once(quad_node)
-            continue
-        
-        #compute the error
-        error = quad_mpc.computeError(current_state, desired_state)
+            projected_controls, projected_states = quad_mpc.warmUpSolution(
+                quad_node.state_info, desired_state)
 
+            continue
+
+        rclpy.spin_once(quad_node)
         projected_controls, projected_states = quad_mpc.solveMPCRealTimeStatic(
-            current_state,
+            quad_node.state_info,
             desired_state)            
 
         x_traj = projected_states[0,:]
         y_traj = projected_states[1,:]
         z_traj = projected_states[2,:]
         psi_traj = projected_states[3,:]
+ 
+        control_idx_num = 2 
+        vx_control = projected_controls[0, control_idx_num]
+        vy_control = projected_controls[1, control_idx_num]
+        vz_control = projected_controls[2, control_idx_num]
+        yaw_control = projected_controls[3, control_idx_num]
 
-        vx_traj = projected_states[4,:]
-        vy_traj = projected_states[5,:]
-        vz_traj = projected_states[6,:]
-        psi_dot_traj = projected_states[7,:]
+        index_num = -1
+
+        ref_state = [x_traj[index_num],
+                    y_traj[index_num],
+                    z_traj[index_num],
+                    psi_traj[index_num]]
+
+        ref_control = [vx_control, vy_control, vz_control, yaw_control]
 
 
+        error = quad_node.computeError(quad_node.state_info, ref_state)
 
-        # #compute the control input
-        # u = quad_mpc.computeControlInput(error)
+        
+        control_error = quad_node.computeError(quad_node.control_info, ref_control)
+        print("error: ", error)
+        goal_error = quad_node.computeError(quad_node.state_info, desired_state)
+        # print("goal error: ", goal_error)
+        distance_error = np.linalg.norm(goal_error[0:2])
+                        
+        if distance_error < error_tolerance:
+            #shut down the node
+            quad_node.destroy_node()
+            rclpy.shutdown()
+            return 
 
-        # #send the control input to the drone
-        # master.mav.manual_control_send(master.target_system, 0, 0, 0, u[0], 0)
+        print("distance error: ", distance_error)
+        print("control_error: ", control_error)
+        print("quad_node.state_info: ", quad_node.state_info)
 
-    # rclpy.spin(node)
-    # rclpy.shutdown()
+        print("x_traj: ", x_traj[index_num],
+                "y_traj: ", y_traj[index_num],
+                "z_traj: ", z_traj[index_num],
+                "psi_traj: ", psi_traj[1],)
+
+        # mavSendVelocityCMD(master, 
+        #                     goal_error[0], 
+        #                     goal_error[1], 
+        #                     goal_error[2], 
+        #                     goal_error[3])
+
+        # mavSendVelocityCMD(master,
+        #                     -control_error[0],
+        #                     -control_error[1],
+        #                     -control_error[2],
+        #                     error[3])
+
+        # mavSendVelocityCMD(master,
+        #                     ref_control[0],
+        #                     ref_control[1],
+        #                     ref_control[2],
+        #                     ref_control[3])
+
+        mavSendVelocityCMD(master, 
+                            error[0], 
+                            error[1], 
+                            -error[2], 
+                            error[3])
+
+        rclpy.spin_once(quad_node)
+
 
 if __name__ == '__main__':
     main()

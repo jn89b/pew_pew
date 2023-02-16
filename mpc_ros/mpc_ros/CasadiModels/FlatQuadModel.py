@@ -81,15 +81,17 @@ class FlatQuadcopterModel():
         
     def set_state_space(self) -> None:
         #this is where I do the dynamics for state space
+        magnitude = ca.sqrt(self.vx**2 + self.vy**2)
         self.z_0 = self.vx * ca.cos(self.psi) - self.vy * ca.sin(self.psi)
         self.z_1 = self.vy * ca.sin(self.psi) + self.vy * ca.cos(self.psi)
-        self.z_2 = self.vz
+        self.z_2 = self.vz 
         self.z_3 = self.psi_dot
         
         self.x_ddot = (-self.vx + (self.k_x * self.u_0))
         self.y_ddot = (-self.vy + (self.k_y * self.u_1))
         self.z_ddot = (-self.vz + (self.k_z * self.u_2))
         self.psi_ddot = (-self.psi_dot + (self.k_psi * self.u_3))
+
 
         #renamed it as z because I have an x variable, avoid confusion    
         self.z_dot = ca.vertcat(
