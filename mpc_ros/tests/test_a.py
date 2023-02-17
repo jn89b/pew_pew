@@ -96,3 +96,5 @@ def test_bad_mpc_param_inputs():
 
     with pytest.raises(AssertionError):
         mpc = MPC.MPC(bad_mpc_params)
+
+

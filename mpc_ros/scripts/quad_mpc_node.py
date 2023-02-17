@@ -9,9 +9,6 @@ import mavros
 from rclpy.node import Node
 from mavros.base import SENSOR_QOS
 
-# from geometry_msgs.msg import PoseStamped, \
-#     TwistStamped, Pose, Twist, Point, \
-#     Quaternion
 
 from mpc_ros import quaternion_tools, MPC, Config
 from mpc_ros.CasadiModels import FlatQuadModel, SimpleQuadModel
@@ -23,7 +20,6 @@ import pickle as pkl
 import time
 
 class FlatQuadMPC(MPC.MPC):
-    
     def __init__(self, mpc_params:dict, quad_constraint_params:dict):
         super().__init__(mpc_params)
         self.quad_constraint_params = quad_constraint_params
@@ -42,7 +38,6 @@ class FlatQuadMPC(MPC.MPC):
         projected_controls,projected_states = self.solveMPCRealTimeStatic(start,goal)
         
         return projected_controls,projected_states
-
 
     def addAdditionalConstraints(self) -> None:
         #add additional constraints here
@@ -118,10 +113,10 @@ def initQuadMPC():
 
     simple_quad_constraint_params = {
         'vx_max': 15.0, #m/s
-        'vx_min': -15.0, #m/s
+        'vx_min': 0.0, #m/s
 
         'vy_max': 15.0, #m/s
-        'vy_min': -15.0, #m/s
+        'vy_min': 0.0, #m/s
 
         'vz_max': 5.0, #m/s
         'vz_min': 3.0, #m/s
@@ -138,7 +133,7 @@ def initQuadMPC():
         'N': 25,
         'dt_val': 0.1,
         'Q': np.diag([1, 1, 1, 0.1]),
-        'R': np.diag([1, 1, 1, 10.0])
+        'R': np.diag([1, 1, 1, 1.0])
     }
 
     quad_mpc = FlatQuadMPC(simple_mpc_quad_params, simple_quad_constraint_params)
@@ -180,7 +175,7 @@ def mavSendVelocityCMD(master, vx:float,
         0, #afy
         0, #afz
         yaw, #yaw
-        0) #yaw_rate #r
+        0) #yaw_rate 
 
 def main(args=None):
     rclpy.init()
@@ -229,13 +224,13 @@ def main(args=None):
         z_traj = projected_states[2,:]
         psi_traj = projected_states[3,:]
  
-        control_idx_num = 2 
+        control_idx_num = -1 
         vx_control = projected_controls[0, control_idx_num]
         vy_control = projected_controls[1, control_idx_num]
         vz_control = projected_controls[2, control_idx_num]
         yaw_control = projected_controls[3, control_idx_num]
 
-        index_num = -1
+        index_num = -2
 
         ref_state = [x_traj[index_num],
                     y_traj[index_num],
@@ -248,8 +243,7 @@ def main(args=None):
         error = quad_node.computeError(quad_node.state_info, ref_state)
 
         
-        control_error = quad_node.computeError(quad_node.control_info, ref_control)
-        print("error: ", error)
+        # control_error = quad_node.computeError(quad_node.control_info, ref_control)
         goal_error = quad_node.computeError(quad_node.state_info, desired_state)
         # print("goal error: ", goal_error)
         distance_error = np.linalg.norm(goal_error[0:2])
@@ -261,14 +255,6 @@ def main(args=None):
             return 
 
         print("distance error: ", distance_error)
-        print("control_error: ", control_error)
-        print("quad_node.state_info: ", quad_node.state_info)
-
-        print("x_traj: ", x_traj[index_num],
-                "y_traj: ", y_traj[index_num],
-                "z_traj: ", z_traj[index_num],
-                "psi_traj: ", psi_traj[1],)
-
         # mavSendVelocityCMD(master, 
         #                     goal_error[0], 
         #                     goal_error[1], 

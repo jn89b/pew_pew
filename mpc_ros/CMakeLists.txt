@@ -20,9 +20,9 @@ find_package(rclpy REQUIRED)
 
 find_package(rosidl_default_generators REQUIRED)
 
-# rosidl_generate_interfaces(${PROJECT_NAME}
-#   "msg/TurtleCmd.msg"
-#  )
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/Telem.msg"
+ )
 
 # # Include Cpp "include" directory
 # include_directories(include)
@@ -42,17 +42,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/quad_mpc_node.py
-  # scripts/mpc_turtle.py
-  # scripts/turtle_mpc_node.py
-  # scripts/example_offboard.py
-  # scripts/mpc_quad.py
-  # scripts/fixedwing_offboard.py
-  # scripts/logger.py
-  # scripts/test_script.py
-  # scripts/turtle_prototype.py
-  # scripts/fw_airplane_mpc.py
-  # scripts/effector_node.py
-  # scripts/effector_frame.py
+  scripts/drone_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()

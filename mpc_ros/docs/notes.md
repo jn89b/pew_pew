@@ -27,3 +27,9 @@ colcon test --packages-select <name-of-pkg> --pytest-args -k name_of_the_test_fu
 ```
 colcon test-result --all --verbose
 ```
+
+
+
+## To DO Feb 16/2022
+- Subscribe to Telemetry Topic 
+-    
