@@ -68,3 +68,22 @@ def rot2d(psi):
     return np.array([[np.cos(psi), -np.sin(psi)],
                      [np.sin(psi), np.cos(psi)]])
 
+
+def convertENUToNED(x_enu:float, y_enu:float, z_enu:float) -> list:
+    """converts from ENU to NED"""
+    ned =  np.zeros(3, dtype=np.float64)
+    ned[0] = y_enu
+    ned[1] = x_enu
+    ned[2] = -z_enu
+    return ned
+
+def convertNEDToENU(x_ned:float, y_ned:float, z_ned:float) -> list:
+    """converts from NED to ENU"""
+    #create 3,1 array
+    enu = np.zeros(3, dtype=np.float64)
+    enu[0] = y_ned
+    enu[1] = x_ned
+    enu[2] = -z_ned
+    return enu
+
+    

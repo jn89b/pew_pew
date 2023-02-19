@@ -29,11 +29,11 @@ def setup_quad_mpc_constraints(good_mpc_params):
     mpc_ref.__initDecisionVariables()
     mpc_ref.defineBoundaryConstraints()
     good_quad_constraints = {
-        'vx_max': 15.0, #m/s
-        'vx_min': -15.0, #m/s
+        'vx_max': 10.0, #m/s
+        'vx_min': -10.0, #m/s
 
-        'vy_max': 15.0, #m/s
-        'vy_min': -15.0, #m/s
+        'vy_max': 10.0, #m/s
+        'vy_min': -10.0, #m/s
 
         'vz_max': 5.0, #m/s
         'vz_min': -5.0, #m/s

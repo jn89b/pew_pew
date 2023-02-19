@@ -22,6 +22,7 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Telem.msg"
+  "msg/CtlTraj.msg"
  )
 
 # # Include Cpp "include" directory
@@ -43,6 +44,7 @@ ament_python_install_package(${PROJECT_NAME})
 install(PROGRAMS
   scripts/quad_mpc_node.py
   scripts/drone_node.py
+  scripts/MPCTrajNode.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()

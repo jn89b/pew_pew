@@ -211,6 +211,7 @@ class MPC():
         # self.compute_cost()
 
         if Config.OBSTACLE_AVOID:
+            print("Obstacle Avoidance Enabled")
             """NEEED TO ADD OBSTACLES IN THE LBG AND UBG"""
             # constraints lower bound added 
             lbg =  ca.DM.zeros((self.n_states*(self.N+1)+self.N, 1))
@@ -223,6 +224,7 @@ class MPC():
             ubg[self.n_states*self.N+n_states:] = 0 
 
         elif Config.MULTIPLE_OBSTACLE_AVOID:
+            print("Multiple Obstacle Avoidance Enabled")
             """NEEED TO ADD OBSTACLES IN THE LBG AND UBG"""
             # constraints lower bound added 
             num_constraints = Config.N_OBSTACLES * self.N
@@ -236,6 +238,7 @@ class MPC():
             ubg[self.n_states*self.N+n_states:] = -Config.ROBOT_DIAMETER/2 
 
         else:
+            print("not avoiding")
             lbg = ca.DM.zeros((self.n_states*(self.N+1), 1))
             ubg  =  ca.DM.zeros((self.n_states*(self.N+1), 1))
 
@@ -296,6 +299,7 @@ class MPC():
 
         #check if obstacles_detected is not None and not empty        
         if obstacles_detected:
+            print("obstacles detected")
             number_obstacles = len(obstacles_detected)
             obstacle_constraints = number_obstacles * self.N
             lbg =  ca.DM.zeros((self.n_states*(self.N+1)+obstacle_constraints, 1))  # constraints lower bound
@@ -306,6 +310,7 @@ class MPC():
             ubg[self.n_states*self.N+n_states:] = ca.inf#rob_diam/2 + obs_diam/2 #adding inequality constraints at the end
 
         else:
+            print("no obstacles detected")
             lbg = ca.DM.zeros((self.n_states*(self.N+1), 1))
             ubg  =  ca.DM.zeros((self.n_states*(self.N+1), 1))
 
@@ -414,6 +419,7 @@ class MPC():
                 ubg[self.n_states*self.N+n_states:] = -1
 
             else:
+                print("No constraints added")
                 lbg = ca.DM.zeros((self.n_states*(self.N+1), 1))
                 ubg  =  ca.DM.zeros((self.n_states*(self.N+1), 1))
 

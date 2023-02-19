@@ -39,16 +39,16 @@ class SimpleQuadModel():
 
     def set_state_space(self):
         self.magnitude = ca.sqrt(self.vx**2 + self.vy**2)
-        self.z_0 = self.vx * ca.cos(self.psi)
-        self.z_1 = self.vy * ca.sin(self.psi)
+        self.z_0 = self.vx #ca.sqrt(self.vx**2 + self.vy**2) * ca.cos(self.psi)  
+        self.z_1 = self.vy #ca.sqrt(self.vx**2 + self.vy**2) * ca.sin(self.psi) 
         self.z_2 = self.vz
-        self.z_3 = self.psi_dot 
+        self.z_3 =  self.psi_dot
 
         self.z_dot = ca.vertcat(
             self.z_0,
             self.z_1,
             self.z_2,
-            self.z_3
+            self.z_3,
         )
 
         self.function = ca.Function('f',

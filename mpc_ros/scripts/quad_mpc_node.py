@@ -53,7 +53,7 @@ class FlatQuadMPC(MPC.MPC):
         self.lbx['U'][3,:] = self.quad_constraint_params['psi_dot_min']
         self.ubx['U'][3,:] = self.quad_constraint_params['psi_dot_max']
 
-                                                                
+                                 
 class QuadNode(Node):
     def __init__(self):
         super().__init__('quad_node')
@@ -152,6 +152,14 @@ def convertToNED(x_enu:float, y_enu:float, z_enu:float) -> np.ndarray:
     ned[1] = x_enu
     ned[2] = -z_enu
     return ned
+
+def convertToENU(x_ned:float, y_ned:float, z_ned:float) -> np.ndarray:
+    """converts from NED to ENU"""
+    enu = np.zeros((3,1))
+    enu[0] = y_ned
+    enu[1] = x_ned
+    enu[2] = -z_ned
+    return enu
 
 def mavSendVelocityCMD(master, vx:float, 
     vy:float, vz:float, yaw:float):
@@ -273,11 +281,11 @@ def main(args=None):
         #                     ref_control[2],
         #                     ref_control[3])
 
-        mavSendVelocityCMD(master, 
-                            error[0], 
-                            error[1], 
-                            -error[2], 
-                            error[3])
+        # mavSendVelocityCMD(master, 
+        #                     error[0], 
+        #                     error[1], 
+        #                     -error[2], 
+        #                     error[3])
 
         rclpy.spin_once(quad_node)
 
