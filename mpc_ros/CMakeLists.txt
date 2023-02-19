@@ -42,7 +42,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
-  scripts/quad_mpc_node.py
   scripts/drone_node.py
   scripts/MPCTrajNode.py
   DESTINATION lib/${PROJECT_NAME}

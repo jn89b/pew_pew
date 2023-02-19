@@ -117,7 +117,7 @@ class DroneNode(Node):
             0, #z
             vx, #vx
             vy, #vy
-            0, #vz
+            vz, #vz
             0, #afx
             0, #afy
             0, #afz

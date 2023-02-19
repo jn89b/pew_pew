@@ -31,5 +31,13 @@ colcon test-result --all --verbose
 
 
 ## To DO Feb 16/2022
-- Subscribe to Telemetry Topic 
--    
+-[x] Subscribe to Telemetry Topic 
+-[x] Published to Trajectory Topic 
+  - Note remove list input for telem
+- [x] Lateral velocity commands with Quadcopter system
+
+## Future Tasks
+-[] Refactor dictionary so user can define it in ros2 param ecosystem
+-[] Refactor config.py allow user to define and specify mission (Talk to Jon on how to play this out)
+-[] Need to find a sleek way to save this trajectory data - use rosbag? 
+

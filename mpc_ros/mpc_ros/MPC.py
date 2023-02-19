@@ -3,6 +3,7 @@ import numpy as np
 import math as m
 from time import time
 from umkc_mpc_ros import Config
+# import Config
 
 class MPC():
     def __init__(self, mpc_params):
