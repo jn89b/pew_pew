@@ -27,21 +27,26 @@ class MAVListener :
         output = Telem()
         msg = self.master.recv_match(type=['LOCAL_POSITION_NED', 'ATTITUDE', 'GLOBAL_POSITION_INT'], blocking=True)
 
-        output.lat = self.master.messages['GLOBAL_POSITION_INT'].lat
-        output.lon = self.master.messages['GLOBAL_POSITION_INT'].lon
-        output.alt = self.master.messages['GLOBAL_POSITION_INT'].alt
-        output.heading = self.master.messages['GLOBAL_POSITION_INT'].hdg
+        try:
+            output.lat = self.master.messages['GLOBAL_POSITION_INT'].lat
+            output.lon = self.master.messages['GLOBAL_POSITION_INT'].lon
+            output.alt = self.master.messages['GLOBAL_POSITION_INT'].alt
+            output.heading = self.master.messages['GLOBAL_POSITION_INT'].hdg
 
-        output.roll = self.master.messages['ATTITUDE'].roll
-        output.pitch = self.master.messages['ATTITUDE'].pitch
-        output.yaw = self.master.messages['ATTITUDE'].yaw
+            output.roll = self.master.messages['ATTITUDE'].roll
+            output.pitch = self.master.messages['ATTITUDE'].pitch
+            output.yaw = self.master.messages['ATTITUDE'].yaw
 
-        output.x = self.master.messages['LOCAL_POSITION_NED'].x
-        output.y = self.master.messages['LOCAL_POSITION_NED'].y
-        output.z = self.master.messages['LOCAL_POSITION_NED'].z
-        output.vx = self.master.messages['LOCAL_POSITION_NED'].vx
-        output.vy = self.master.messages['LOCAL_POSITION_NED'].vy
-        output.vz = self.master.messages['LOCAL_POSITION_NED'].vz
+            output.x = self.master.messages['LOCAL_POSITION_NED'].x
+            output.y = self.master.messages['LOCAL_POSITION_NED'].y
+            output.z = self.master.messages['LOCAL_POSITION_NED'].z
+            output.vx = self.master.messages['LOCAL_POSITION_NED'].vx
+            output.vy = self.master.messages['LOCAL_POSITION_NED'].vy
+            output.vz = self.master.messages['LOCAL_POSITION_NED'].vz
+        
+        #catch key error 
+        except KeyError:
+            return output
 
         return output 
 
@@ -117,7 +122,7 @@ class DroneNode(Node):
             0, #z
             vx, #vx
             vy, #vy
-            vz, #vz
+            0, #vz
             0, #afx
             0, #afy
             0, #afz

@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 
 import rclpy 
-import math as m
-import casadi as ca
 import numpy as np
 
-import mavros 
 
 from rclpy.node import Node
-from mavros.base import SENSOR_QOS
 
 from mpc_ros import quaternion_tools, MPC, Config 
-from mpc_ros.CasadiModels import FlatQuadModel, SimpleQuadModel
+from mpc_ros.CasadiModels import SimpleQuadModel
 from mpc_ros.msg import Telem, CtlTraj
 
-from pymavlink import mavutil
 import pickle as pkl
 
 import time 
@@ -30,19 +25,17 @@ class FlatQuadMPC(MPC.MPC):
     def __init__(self, mpc_params:dict, quad_constraint_params:dict):
         super().__init__(mpc_params)
         self.quad_constraint_params = quad_constraint_params
+
+    def warmUpSolution(self, start:list, goal:list, controls:list) -> tuple:
         self.initDecisionVariables()
         self.defineBoundaryConstraints()
         self.addAdditionalConstraints()
-
-    def warmUpSolution(self, start:list, goal:list) -> tuple:
-        self.initDecisionVariables()
         self.reinitStartGoal(start, goal)
         self.computeCost()
         self.initSolver()
-        self.defineBoundaryConstraints()
-        self.addAdditionalConstraints()
 
-        projected_controls,projected_states = self.solveMPCRealTimeStatic(start,goal)
+        projected_controls,projected_states = self.solveMPCRealTimeStatic(
+            start,goal, controls)
         
         return projected_controls,projected_states
 
@@ -158,7 +151,7 @@ class MPCTrajPublisher(Node):
         traj_msg.x = ned_position[0]
         traj_msg.y = ned_position[1]
         traj_msg.z = ned_position[2]
-        traj_msg.yaw = -float(self.state_info[3])
+        traj_msg.yaw = -float(ref_position[3])
 
         dz = ref_position[2] - self.state_info[2]
         
@@ -166,27 +159,27 @@ class MPCTrajPublisher(Node):
         upper_z_bound = 60.0
 
         if self.state_info[2] <= lower_z_bound:
-            vz_ref = 0.0 
+            vz_ref = 0.25 
         elif self.state_info[2] >= upper_z_bound:
-            vz_ref = 0.0
+            vz_ref = -0.25
         else:
             vz_ref = ref_velocity[2] - self.control_info[2]
-        
-        print("dz: ", dz)
-        print("vz_ref: ",vz_ref)
 
+        print("ned_velocity = ", ned_velocity)
         traj_msg.vx = ned_velocity[0]#ned_velocity[0]
         traj_msg.vy = ned_velocity[1]#ned_velocity[1]
         traj_msg.vz = -vz_ref#ned_velocity[2]
-        traj_msg.yaw_rate = -float(self.state_info[3])
+        traj_msg.yaw_rate = -float(ref_velocity[3])
         
         self.traj_pub.publish(traj_msg)
 
 def initQuadMPC():
+    """this should be set as a parameter for the user"""
     #should allow user to map these parameters to a yaml file
     simple_quad_model = SimpleQuadModel.SimpleQuadModel()
     simple_quad_model.set_state_space()
 
+    #set these as parameters 
     simple_quad_constraint_params = {
         'vx_max': 5.0, #m/s
         'vx_min': -5.0, #m/s
@@ -197,8 +190,8 @@ def initQuadMPC():
         'vz_max': 0.5, #m/s
         'vz_min': -0.5, #m/s
 
-        'psi_dot_max': np.deg2rad(5.0),#rad/s
-        'psi_dot_min': np.deg2rad(5.0),#rad/s
+        'psi_dot_max': np.deg2rad(25.0),#rad/s
+        'psi_dot_min': -np.deg2rad(25.0),#rad/s
 
         'z_min': 1, #m
         'z_max': 100, #m
@@ -206,13 +199,14 @@ def initQuadMPC():
 
     simple_mpc_quad_params = {
         'model': simple_quad_model,
-        'N': 25,
-        'dt_val': 0.15,
-        'Q': np.diag([1.0, 1.0, 1, 0.5]),
-        'R': np.diag([1, 1, 1, 1])
+        'N': 50,
+        'dt_val': 0.05,
+        'Q': np.diag([1, 1, 1, 0.1]),
+        'R': np.diag([1, 1, 1, 1.0])
     }
 
-    quad_mpc = FlatQuadMPC(simple_mpc_quad_params, simple_quad_constraint_params)
+    quad_mpc = FlatQuadMPC(
+        simple_mpc_quad_params, simple_quad_constraint_params)
 
     return quad_mpc
 
@@ -247,6 +241,22 @@ def set_state_control_idx(mpc_params:dict,
     
     return idx
 
+def isCollision(current_x:float, current_y:float) -> bool:
+    """checkCollisionBubble"""
+    #collision bubble radius
+    r = Config.OBSTACLE_DIAMETER/2
+    #collision bubble center
+    x_c = Config.OBSTACLE_X
+    y_c = Config.OBSTACLE_Y
+
+    dist = np.sqrt((current_x - x_c)**2 + (current_y - y_c)**2)
+
+    if dist <= r:
+        print("Collision Detected", dist)
+        return True
+    else:
+        return False
+
 def main(args=None):
     rclpy.init(args=args)
 
@@ -254,15 +264,14 @@ def main(args=None):
 
     control_idx = 10
     state_idx = -2
-    time_out_sec = 0.1
     dist_error_tol = 5.0
-    idx_buffer = 2
+    idx_buffer = 5
 
     quad_mpc = initQuadMPC()
     mpc_traj_node = MPCTrajPublisher()
-    rclpy.spin_once(mpc_traj_node, timeout_sec=time_out_sec)
+    rclpy.spin_once(mpc_traj_node)
 
-    goal_z = mpc_traj_node.state_info[2] - 5    
+    goal_z = mpc_traj_node.state_info[2] #+ 10.0    
 
     desired_state = [Config.GOAL_X, 
                      Config.GOAL_Y, 
@@ -273,7 +282,8 @@ def main(args=None):
     start_time = time.time()
     projected_controls, projected_states = quad_mpc.warmUpSolution(
         mpc_traj_node.state_info,
-        desired_state)
+        desired_state, 
+        mpc_traj_node.control_info)
 
     traj_dictionary = quad_mpc.returnTrajDictionary(
         projected_controls, projected_states)
@@ -294,12 +304,27 @@ def main(args=None):
 
     while rclpy.ok():
 
-        rclpy.spin_once(mpc_traj_node, timeout_sec=time_out_sec)
-    
+        ref_state_error = mpc_traj_node.computeError(
+            mpc_traj_node.state_info, traj_state)
+          
+        rclpy.spin_once(mpc_traj_node)
+        offset_state = [mpc_traj_node.state_info[0] + ref_state_error[0]/1.5,
+                        mpc_traj_node.state_info[1] + ref_state_error[1]/1.5,
+                        mpc_traj_node.state_info[2] + ref_state_error[2]/1.5,
+                        mpc_traj_node.state_info[3] + ref_state_error[3]/1.5]
+
+        # print("traj_state: ", traj_state)  
+        # print("adjusted_state: ", offset_state)
+        # print("ref_state_error: ", ref_state_error)
+        # print("state info: ", mpc_traj_node.state_info)
+
+        quad_mpc.reinitStartGoal(offset_state, desired_state)
         start_time = time.time()
+
         projected_controls, projected_states = quad_mpc.solveMPCRealTimeStatic(
-            mpc_traj_node.state_info,
-            desired_state)
+            offset_state,
+            desired_state,
+            mpc_traj_node.control_info)
         end_time = time.time()
 
         control_idx = set_state_control_idx(quad_mpc.mpc_params, 
@@ -314,10 +339,8 @@ def main(args=None):
         traj_state, traj_control = get_state_control_ref(
             traj_dictionary, state_idx, control_idx)
 
-        print("state_idx: ", state_idx)
-
         mpc_traj_node.publishTrajectory(
-            traj_state, traj_control)
+            ref_state_error, traj_control)
 
         goal_state_error = mpc_traj_node.computeError(
             mpc_traj_node.state_info, desired_state)
@@ -325,7 +348,29 @@ def main(args=None):
         distance_error = np.linalg.norm(goal_state_error[0:2])
         
         print("distance error: ", distance_error)
-        
+        print("\n")
+
+        if Config.OBSTACLE_AVOID:
+            #check if within obstacle SD
+            rclpy.spin_once(mpc_traj_node)
+
+            current_x = mpc_traj_node.state_info[0]
+            current_y = mpc_traj_node.state_info[1]
+
+            if isCollision(current_x, current_y) == True:
+
+                print("trajectory x", traj_dictionary['x'])
+                print("trajectory y", traj_dictionary['y'])
+                #send 0 velocity command
+                ref_state_error = [0.0, 0.0, 0.0, 0.0]
+                ref_control_error = [0.0, 0.0, 0.0, 0.0]
+                mpc_traj_node.publishTrajectory(
+                    ref_state_error, ref_control_error)
+                
+                mpc_traj_node.destroy_node()
+                rclpy.shutdown()
+                return
+
         if distance_error < dist_error_tol:
             #send 0 velocity command
             ref_state_error = [0.0, 0.0, 0.0, 0.0]
@@ -339,11 +384,11 @@ def main(args=None):
 
 
         desired_state = [Config.GOAL_X, 
-                        Config.GOAL_Y, 
-                        goal_z, 
-                        traj_dictionary['yaw'][state_idx]]
+                         Config.GOAL_Y, 
+                         goal_z, 
+                         offset_state[3]]
 
-        rclpy.spin_once(mpc_traj_node, timeout_sec=time_out_sec)
+        rclpy.spin_once(mpc_traj_node)
 
 if __name__ == '__main__':
     main()

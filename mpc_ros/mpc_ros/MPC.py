@@ -2,7 +2,7 @@ import casadi as ca
 import numpy as np
 import math as m
 from time import time
-from umkc_mpc_ros import Config
+from mpc_ros import Config
 # import Config
 
 class MPC():
@@ -24,7 +24,7 @@ class MPC():
         self.n_states = self.model.n_states
         self.n_controls = self.model.n_controls
 
-        self.S = 0.05
+        self.S = 2.0 #obstacle avoidance weight
         self.cost_fn = 0
 
     def initDecisionVariables(self):
@@ -100,11 +100,13 @@ class MPC():
                 x_pos = self.X[0,k]
                 y_pos = self.X[1,k]                
                 obs_distance = ca.sqrt((x_pos - Config.OBSTACLE_X)**2 + \
-                                        (y_pos - Config.OBSTACLE_Y)**2)
-                
+                                        (y_pos - Config.OBSTACLE_Y)**2) 
 
-                obs_constraint = -obs_distance + (Config.ROBOT_DIAMETER/2) + \
-                    (Config.OBSTACLE_DIAMETER/2)
+    
+                obs_constraint = -obs_distance + ((Config.ROBOT_DIAMETER/2) + \
+                    (Config.OBSTACLE_DIAMETER/2))
+
+                self.cost_fn = self.cost_fn + (self.S* obs_distance)
 
                 self.g = ca.vertcat(self.g, obs_constraint) 
 
@@ -122,19 +124,21 @@ class MPC():
                                             (y_pos - obs_y)**2)
                     
 
-                    obs_constraint = -obs_distance + (Config.ROBOT_DIAMETER/2) + \
-                        (obs_diameter/2)
+                    obs_constraint = -obs_distance + ((Config.ROBOT_DIAMETER) + \
+                        (obs_diameter/2)) 
 
                     self.g = ca.vertcat(self.g, obs_constraint)
                 
                     if obstacle == [Config.GOAL_X, Config.GOAL_Y]:
                         continue
                     
-                    # self.cost_fn = (self.S* obs_distance)
+                    self.cost_fn = self.cost_fn + (self.S* obs_distance)
 
 
     def initSolver(self):
         
+        self.solver = None
+
         nlp_prob = {
             'f': self.cost_fn,
             'x': self.OPT_variables,
@@ -186,17 +190,18 @@ class MPC():
         return next_t, next_state, next_control
 
 
-    def solveMPCRealTimeStatic(self, start, goal):
+    def solveMPCRealTimeStatic(self, start, goal, controls):
         """solve the mpc based on initial and desired location"""
         n_states = self.model.n_states
         n_controls = self.model.n_controls
         
         self.state_init = ca.DM(start)        # initial state
         self.state_target = ca.DM(goal)  # target state
-        
+        self.controls = ca.DM(controls)  # initial control
         # self.t0 = t0
-        self.u0 = ca.DM.zeros((self.n_controls, self.N))  # initial control
+        #self.u0 = ca.DM.zeros((self.n_controls, self.N))  # initial control 
         self.X0 = ca.repmat(self.state_init, 1, self.N+1)         # initial state full
+        self.u0 = ca.repmat(self.controls, 1, self.N)             # initial control full
 
         """Jon's advice consider velocity of obstacle at each knot point"""
         #moving target in the y direction
@@ -204,12 +209,11 @@ class MPC():
 
         obstacle_history = []
 
-        if Config.OBSTACLE_AVOID:
-            obs_x = Config.OBSTACLE_X
-            obs_y = Config.OBSTACLE_Y
-
+        # if Config.OBSTACLE_AVOID:
+        #     obs_x = Config.OBSTACLE_X
+        #     obs_y = Config.OBSTACLE_Y
         self.initSolver()
-        # self.compute_cost()
+
 
         if Config.OBSTACLE_AVOID:
             print("Obstacle Avoidance Enabled")
@@ -220,9 +224,9 @@ class MPC():
             lbg[self.n_states*self.N+n_states:] = -ca.inf 
             
             # constraints upper bound
-            ubg  =  ca.DM.zeros((self.n_states*(self.N+1)+self.N, 1))
+            ubg  = ca.DM.zeros((self.n_states*(self.N+1)+self.N, 1))
             #rob_diam/2 + obs_diam/2 #adding inequality constraints at the end 
-            ubg[self.n_states*self.N+n_states:] = 0 
+            ubg[self.n_states*self.N+n_states:] = -Config.BUFFER_DISTANCE
 
         elif Config.MULTIPLE_OBSTACLE_AVOID:
             print("Multiple Obstacle Avoidance Enabled")
@@ -236,7 +240,7 @@ class MPC():
             # constraints upper bound
             ubg  =  ca.DM.zeros((self.n_states*(self.N+1)+num_constraints, 1))
             #rob_diam/2 + obs_diam/2 #adding inequality constraints at the end 
-            ubg[self.n_states*self.N+n_states:] = -Config.ROBOT_DIAMETER/2 
+            ubg[self.n_states*self.N+n_states:] = -Config.BUFFER_DISTANCE
 
         else:
             print("not avoiding")
@@ -389,7 +393,6 @@ class MPC():
             if Config.MOVING_OBSTACLE:
                 obs_x, obs_y = self.moveObstacle(obs_x, obs_y)
                 obstacle_history.append((obs_x, obs_y))        
-
 
             self.initSolver()
             self.computeCost()
