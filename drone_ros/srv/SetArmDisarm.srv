@@ -1,0 +1,3 @@
+int8 arm_disarm #1 for arm 0 for disarm
+---
+bool success

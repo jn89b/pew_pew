@@ -23,6 +23,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Telem.msg"
   "msg/CtlTraj.msg"
+  "srv/AddTwoInts.srv"
+  "srv/SetArmDisarm.srv"
  )
 
 # # Include Cpp "include" directory
@@ -36,14 +38,15 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 #   DESTINATION lib/${PROJECT_NAME}
 # )
 
-
-
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/Drone.py
-  scripts/drone_node.py
+  scripts/GSService.py
+  scripts/GSInputClient.py
+  # scripts/client_member_function.py
+  # scripts/service_member_function.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()

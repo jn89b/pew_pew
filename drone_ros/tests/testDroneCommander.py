@@ -79,7 +79,7 @@ def testBadModeChange(setup_commander):
     val = commander.validateModeChange(mode)
     assert val == False
 
-def testgoodTakeoff(setup_commander):
+def testGoodTakeoff(setup_commander):
     """
     send commands that are valid return True
     """

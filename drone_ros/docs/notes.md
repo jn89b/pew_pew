@@ -9,17 +9,28 @@
 		- Land 
 - The Situation:
 	- There is **WAY TOO MUCH** abstraction, hard to add new features (premature abstraction)
-- Drone Class:
-	- Composes of:
-		- Drone Subscriber Class
-			- Subscribes to all information about anything related to UAS
-		- User Listener Class:
-			- Listens to user commands/via JSON and whatnot
-		- Drone Commander Class:
-			- Sends command to system via mavlink protocol  
-	- Has a designated call sign
-	- Has a designated port for mavlink communication
 
+### Drone Node Class
+- Composes of:
+- User Listener Class:
+	- Listens to user commands/via JSON and whatnot
+- Drone Commander Class:
+	- Sends command to system via mavlink protocol  
+- Has a designated call sign
+- Has a designated port for mavlink communication
+
+### DroneInfo Class
+- Wrapper interface to convert Mavlink information of UAS and publish it to ROS2 ecosystem
+- Publishes state information of UAS 
+- Publishes heartbeat of UAS system
+- Can provide parameter info of UAS 
+
+### GS Service Node
+- Provides service for user to:
+  - Input commands for drone
+  - It will validate the command inputs
+- Provides service to DroneNode to:
+  - Request the stack of commands from user 
 
 ## To Do
 
@@ -30,9 +41,14 @@ Provide api to do the following:
 - [x] Takeoff
 - [x] Switch Mode
 - [x] Send basic velocity commands 
-- Should have it where user inputs the correct arguments for each method
-- Unit test these inputs 
+- [x] Unit test these inputs
 
+### Future Work
+- Make takeoff and land become services 
+- Add package dependencies of:
+  - drone_interfaces
+  - mpc_ros
+  - other stuff
 
 ### Notes 
 - For takeoff and landing, need to wait until the desired height or landing condition is met, just like how the arm protocol works 

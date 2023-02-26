@@ -166,8 +166,9 @@ class Commander():
         yaw: yaw angle in degrees
         
         """
-        vy = args['vy']
         vx = args['vx']
+        vy = args['vy']
+
         set_vz = args['set_vz']
         if set_vz == True:
             vz = args['vz']
@@ -179,19 +180,20 @@ class Commander():
             0, #time_boot_ms
             master.target_system, #target_system
             master.target_component, #target_component
-            mavutil.mavlink.MAV_FRAME_BODY_NED, #frame
-            0b0000111111000111, #type_mask
+            mavutil.mavlink.MAV_FRAME_LOCAL_NED, #coordinate frame
+            0b0000111111000111, #type_mask #enable vx, vy, vz, afx, afy, afz
+            # 0b110111111000, #type_mask #enable position
             0, #x
             0, #y
             0, #z
             vx, #vx
             vy, #vy
-            vz, #vz
+            0, #vz
             0, #afx
             0, #afy
             0, #afz
             0, #yaw
-            0) #yaw_rate 
+            0) #yaw_rate  
 
     def sendLandCMD(self, args) -> None:
         """
