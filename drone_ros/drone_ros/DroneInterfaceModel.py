@@ -36,3 +36,8 @@ class DroneInterfaceModel():
     def getTakeoffHeight(self):
         return self.model['set_takeoff_height']
     
+    def getGoal(self):
+        return self.model['set_goal']
+
+    def getType(self):
+        return self.model['set_type']

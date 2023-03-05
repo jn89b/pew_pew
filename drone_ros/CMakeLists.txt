@@ -29,6 +29,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetGoal.srv"
   "srv/SetUASType.srv"
   "srv/SetTakeOff.srv"
+  "srv/getGSInfo.srv"
  )
 
 # # Include Cpp "include" directory

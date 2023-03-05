@@ -1,0 +1,9 @@
+---
+int8 arm_disarm         #1 for arm 0 for disarm
+float32 goal_x          #x position in meters
+float32 goal_y          #y position in meters
+float32 goal_z          #z position in meters
+int8 takeoff            #1 for takeoff 0 for land
+float32 height          #takeoff height in meters
+string uas_config       #configuration of UAS
+bool success            #success 

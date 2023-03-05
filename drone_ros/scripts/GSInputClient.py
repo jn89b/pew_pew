@@ -4,7 +4,7 @@ import os
 import json
 import ast
 from rclpy.node import Node
-from drone_ros.srv import SetArmDisarm, SetGoal, SetTakeOff
+from drone_ros.srv import SetArmDisarm, SetGoal, SetTakeOff, SetUASType
 from drone_ros.DroneInterfaceModel import DroneInterfaceModel
 
 
@@ -14,7 +14,6 @@ Model View Controller Interface
 Model - The dictionary we can query for information about the drone
 View - The CLI that displays information about the drone
 Controller - The class that handles user input and sends it to the drone
-
 """
 
 class GSInputClient(Node):
@@ -26,6 +25,12 @@ class GSInputClient(Node):
         
         self.takeoff_client = self.create_client(
             SetTakeOff, 'set_takeoff')
+        
+        self.goal_client = self.create_client(
+            SetGoal, 'set_goal')
+        
+        self.uas_config_client = self.create_client(
+            SetUASType, 'set_uas_type')
         
     def sendArmDisarmRequest(self, arm_disarm: int):
         self.armdisarm_request = SetArmDisarm.Request()
@@ -42,6 +47,21 @@ class GSInputClient(Node):
         rclpy.spin_until_future_complete(self, self.future)
         return self.future.result()
     
+    def sendGoalRequest(self, goal: list):
+        self.goal_request = SetGoal.Request()
+        self.goal_request.x = float(goal[0])
+        self.goal_request.y = float(goal[1])
+        self.goal_request.z = float(goal[2])
+        self.future = self.goal_client.call_async(self.goal_request)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
+    
+    def sendUASConfigRequest(self, uas_config: str):
+        self.uas_config_request = SetUASType.Request()
+        self.uas_config_request.uas_config = uas_config
+        self.future = self.uas_config_client.call_async(self.uas_config_request)
+        rclpy.spin_until_future_complete(self, self.future)
+        return self.future.result()
     
 class UserInputVerifier():
     
@@ -209,10 +229,9 @@ class InputController(Node):
     def sendDroneCommands(self):
         model = self.drone_interface_model
         model_info = model.getModelInfo()
-        print("Model: ", model)
 
-        #important_keys = ['set_arm_disarm', 'set_takeoff', 'set_goal', 'set_uas_config']
-        important_keys = ['set_arm_disarm', 'set_takeoff']
+        # important_keys = ['set_arm_disarm', 'set_takeoff', 'set_goal', 'set_uas_config']
+        important_keys = ['set_arm_disarm', 'set_takeoff', 'set_goal', 'set_type']
 
         for key in important_keys:
             if model_info[key] is None:
@@ -221,10 +240,15 @@ class InputController(Node):
 
         arm_response = self.gs_input_client.sendArmDisarmRequest(model.getArmDisarm())
         takeoff_response = self.gs_input_client.sendTakeOffRequest(model.getTakeoff(), 
-                                                                   model.getTakeoffHeight())
-        
-        print("Arm Disarm Response: ", arm_response)
-        print("Takeoff Response: ", takeoff_response)
+                                                                   model.getTakeoffHeight())        
+        goal_response = self.gs_input_client.sendGoalRequest(model.getGoal())
+        uas_config_response = self.gs_input_client.sendUASConfigRequest(model.getType())
+
+        print("Arm Disarm Response: ", arm_response.success)
+        print("Takeoff Response: ", takeoff_response.success)
+        print("Goal Response: ", goal_response.success)
+        print("UAS Config Response: ", uas_config_response.success)
+        print('\n')
 
     def droneArmDisarmUserFunction(self, user_input: str) -> None:
         arm_disarm = self.user_input_verifier.checkArmInput(user_input)
@@ -291,7 +315,6 @@ class InputController(Node):
                 print("Goal: ", goal_input)
                 return
                 
-
             
 class ViewCommandLine():
     def __init__(self, interface_cmds: list, interface_info: list,
@@ -329,7 +352,6 @@ def main():
     input_controller = InputController()
 
     while True:
-
         input_controller.view.displayHelp()
         user_input = input("Enter command: ")
         input_controller.takeInput(user_input)

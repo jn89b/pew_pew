@@ -7,21 +7,38 @@ from rclpy.node import Node
 from drone_ros.Commander import Commander
 from drone_ros.DroneInfo import DroneInfo
 from drone_ros.msg import Telem, CtlTraj
-    
-class GSListener():
+from drone_ros.srv import getGSInfo
+
+from drone_ros.DroneInterfaceModel import DroneInterfaceModel
+
+class GSListenerClient(Node):
     """
     Make this as a service
     """
     def __init__(self) -> None:
-        pass
+        super().__init__('gs_listener_client')
 
-    def startListening(self) -> None:
-        pass
+        self.model_info = DroneInterfaceModel()
+        self.info_client = self.create_client(getGSInfo, 'gs_listener')
 
-    def getData(self) -> None:
-        pass
+        while not self.info_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service not available, waiting again...')
+        
+    def sendInfoRequest(self):
+        request = getGSInfo.Request()
+        future = self.info_client.call_async(request)
+        # future.add_done_callback(self.__infoResponseCallback)
+        rclpy.spin_until_future_complete(self, future)
+        
+        return future.result()
 
-    
+    def mapInfo(self, response):
+        self.model_info.setArmDisarm(response.arm_disarm)
+        self.model_info.setGoal(response.goal)
+        self.model_info.setTakeoff(response.takeoff, response.height)
+        self.model_info.setUASType(response.uas_type)
+        
+
 class DroneNode(Node):
     def __init__(self):
         super().__init__('drone_node')
@@ -36,7 +53,7 @@ class DroneNode(Node):
         self.__initPublishers()
 
         self.commander = Commander(self.master)
-        self.gs_listener = GSListener()
+        self.gs_listener = GSListenerClient()
         self.drone_info = DroneInfo(self.master, 
                                     self.telem_publisher,
                                     self.drone_node_frequency)

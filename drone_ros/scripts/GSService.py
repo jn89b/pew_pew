@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from drone_ros.srv import SetArmDisarm, SetGoal, SetTakeOff
+
+from drone_ros.srv import SetArmDisarm, SetGoal, \
+    SetTakeOff, SetUASType, getGSInfo
+
 from drone_ros.DroneInterfaceModel import DroneInterfaceModel
 
 class GSService(Node):
@@ -28,6 +31,14 @@ class GSService(Node):
                                         self.__setTakeOffCallback)
         
 
+        self.uas_config_srv = self.create_service(SetUASType,
+                                        'set_uas_type',
+                                        self.__setUASTypeCallback)
+        
+        self.gs_info_srv = self.create_service(getGSInfo,
+                                        'get_gs_info',
+                                        self.__getGSInfoCallback)
+                                                  
     def __setArmDisarmCallback(self, request, response):
 
         self.drone_model.setArmDisarm(request.arm_disarm)
@@ -37,19 +48,35 @@ class GSService(Node):
     
     def __setGoalCallback(self, request, response):
         
-        self.drone_model.setGoal(request.goal)
+        goal = [request.x, request.y, request.z]
+        self.drone_model.setGoal(goal)
         # self.command_dict['goal'] = request.goal
         response.success = True
         return response
     
-
     def __setTakeOffCallback(self, request, response):
         # self.command_dict['takeoff'] = request.takeoff
         self.drone_model.setTakeoff(request.takeoff, request.height)
 
         response.success = True
         return response
+    
+    def __setUASTypeCallback(self, request, response):
+        # self.command_dict['uas_type'] = request.uas_type
+        self.drone_model.setType(request.uas_config)
 
+        response.success = True
+        return response
+    
+    def __getGSInfoCallback(self, request, response):
+        model = self.drone_model
+        response.arm_disarm = model.getArmDisarm()
+        response.goal = model.getGoal()
+        response.takeoff = model.getTakeoff()
+        response.uas_type = model.getType()
+        response.takeoff_height = model.getTakeoffHeight()
+        response.success = True
+        return response
 
 def main():
     rclpy.init(args=None)
