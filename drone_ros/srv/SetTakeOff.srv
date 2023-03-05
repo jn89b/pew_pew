@@ -1,0 +1,4 @@
+int8 takeoff #1 for arm 0 for disarm
+float32 height #meters 
+---
+bool success

@@ -23,8 +23,12 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Telem.msg"
   "msg/CtlTraj.msg"
+
   "srv/AddTwoInts.srv"
   "srv/SetArmDisarm.srv"
+  "srv/SetGoal.srv"
+  "srv/SetUASType.srv"
+  "srv/SetTakeOff.srv"
  )
 
 # # Include Cpp "include" directory

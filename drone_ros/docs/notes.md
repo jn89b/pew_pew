@@ -33,6 +33,15 @@
   - Request the stack of commands from user 
 
 ## To Do
+- Add the following features to the GS Service Function:
+  - [] Command line interface for user to:
+    - Specify arm
+    - Specify takeoff
+    - Specify UAS type 
+    - Specify Goal Location
+    - Specify Guidance Strategy
+  - [] Build user stories for this and test that commands are okay 
+  - Add the following features 
 
 ### Commander Class
 Provide api to do the following:

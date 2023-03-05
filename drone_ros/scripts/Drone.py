@@ -41,9 +41,6 @@ class DroneNode(Node):
                                     self.telem_publisher,
                                     self.drone_node_frequency)
         
-        self.__initGSListener()
-        self.__initDroneInfo()
-
         self.__initSubscribers()
 
         self.vel_args = {}

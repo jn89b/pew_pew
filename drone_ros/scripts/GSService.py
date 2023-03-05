@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node
-from drone_ros.srv import SetArmDisarm
+from drone_ros.srv import SetArmDisarm, SetGoal, SetTakeOff
+from drone_ros.DroneInterfaceModel import DroneInterfaceModel
 
 class GSService(Node):
     """
@@ -12,28 +13,43 @@ class GSService(Node):
     def __init__(self):
         super().__init__('gs_service')
         
-        self.command_dict = {}
-        self.srv = self.create_service(SetArmDisarm, 
+        self.drone_model = DroneInterfaceModel()
+
+        self.arm_disarm_srv = self.create_service(SetArmDisarm, 
                                        'set_arm_disarm', 
                                        self.__setArmDisarmCallback)
 
-    def __validateArmDisarm(self, arm_disarm: int) -> bool:
-        if arm_disarm == 0 or arm_disarm == 1:
-            return True
-        else:
-            return False
+        self.goal_srv = self.create_service(SetGoal,
+                                        'set_goal',
+                                        self.__setGoalCallback)
+        
+        self.takeoff_srv = self.create_service(SetTakeOff,
+                                        'set_takeoff',
+                                        self.__setTakeOffCallback)
+        
 
     def __setArmDisarmCallback(self, request, response):
-        if self.__validateArmDisarm(request.arm_disarm) == False:
-            response.success = False
-        else:
-            self.command_dict['arm_disarm'] = request.arm_disarm
-            response.success = True
-            
-        print(self.command_dict)
 
+        self.drone_model.setArmDisarm(request.arm_disarm)
+        #self.command_dict['arm_disarm'] = request.arm_disarm
+        response.success = True
         return response
     
+    def __setGoalCallback(self, request, response):
+        
+        self.drone_model.setGoal(request.goal)
+        # self.command_dict['goal'] = request.goal
+        response.success = True
+        return response
+    
+
+    def __setTakeOffCallback(self, request, response):
+        # self.command_dict['takeoff'] = request.takeoff
+        self.drone_model.setTakeoff(request.takeoff, request.height)
+
+        response.success = True
+        return response
+
 
 def main():
     rclpy.init(args=None)

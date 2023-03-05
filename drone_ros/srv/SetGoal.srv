@@ -1,0 +1,5 @@
+float32 x #x position in meters
+float32 y #y position in meters
+float32 z #z position in meters
+---
+bool success
