@@ -29,7 +29,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetGoal.srv"
   "srv/SetUASType.srv"
   "srv/SetTakeOff.srv"
-  "srv/getGSInfo.srv"
+  # "srv/getGSInfo.srv"
  )
 
 # # Include Cpp "include" directory
@@ -50,6 +50,7 @@ install(PROGRAMS
   scripts/Drone.py
   scripts/GSService.py
   scripts/GSInputClient.py
+  scripts/logger.py
   # scripts/client_member_function.py
   # scripts/service_member_function.py
   DESTINATION lib/${PROJECT_NAME}

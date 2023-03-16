@@ -34,13 +34,13 @@
 
 ## To Do
 - Add the following features to the GS Service Function:
-  - [] Command line interface for user to:
-    - Specify arm
-    - Specify takeoff
-    - Specify UAS type 
-    - Specify Goal Location
-    - Specify Guidance Strategy
-  - [] Build user stories for this and test that commands are okay 
+  - [x] Command line interface for user to:
+    - [x] Specify arm
+    - [x] Specify takeoff
+    - [x] Specify UAS type 
+    - [x] Specify Goal Location
+    - [x] Specify Guidance Strategy
+  - [ ] Build user stories for this and test that commands are okay 
   - Add the following features 
 
 ### Commander Class

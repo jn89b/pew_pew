@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from drone_ros.srv import SetArmDisarm, SetGoal, \
-    SetTakeOff, SetUASType, getGSInfo
+    SetTakeOff, SetUASType#, getGSInfo
 
 from drone_ros.DroneInterfaceModel import DroneInterfaceModel
 
@@ -69,6 +69,10 @@ class GSService(Node):
         return response
     
     def __getGSInfoCallback(self, request, response):
+        """
+        Need to check when I callback if any of my responses are empty
+        
+        """
         model = self.drone_model
         response.arm_disarm = model.getArmDisarm()
         response.goal = model.getGoal()

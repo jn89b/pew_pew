@@ -2,7 +2,7 @@
 from pymavlink import mavutil
 from drone_ros.msg import Telem
 from rclpy.node import Node
-
+import math
 
 class DroneInfo():
     def __init__(self, master, 
@@ -19,6 +19,8 @@ class DroneInfo():
                                     self.drone_info_frequency)
         self.__requestMessageInterval(mavutil.mavlink.MAVLINK_MSG_ID_GLOBAL_POSITION_INT,
                                     self.drone_info_frequency)
+        self.__requestMessageInterval(mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE_QUATERNION,
+                                    self.drone_info_frequency)
         
     def __getData(self) -> Telem:
         
@@ -31,9 +33,22 @@ class DroneInfo():
             output.alt = self.master.messages['GLOBAL_POSITION_INT'].alt
             output.heading = self.master.messages['GLOBAL_POSITION_INT'].hdg
 
-            output.roll = self.master.messages['ATTITUDE'].roll
-            output.pitch = self.master.messages['ATTITUDE'].pitch
-            output.yaw = self.master.messages['ATTITUDE'].yaw
+            qx = self.master.messages['ATTITUDE_QUATERNION'].q1
+            qy = self.master.messages['ATTITUDE_QUATERNION'].q2
+            qz = self.master.messages['ATTITUDE_QUATERNION'].q3
+            qw = self.master.messages['ATTITUDE_QUATERNION'].q4
+
+            output.roll = math.atan2(2*(qw*qx + qy*qz), 1 - 2*(qx*qx + qy*qy))
+            output.pitch = math.asin(2*(qw*qy - qz*qx))
+            output.yaw = math.atan2(2*(qw*qz + qx*qy), 1 - 2*(qy*qy + qz*qz))
+            
+            # output.roll = self.master.messages['ATTITUDE'].roll
+            # output.pitch = self.master.messages['ATTITUDE'].pitch
+            # output.yaw = self.master.messages['ATTITUDE'].yaw
+
+            output.roll_rate = self.master.messages['ATTITUDE'].rollspeed
+            output.pitch_rate = self.master.messages['ATTITUDE'].pitchspeed
+            output.yaw_rate = self.master.messages['ATTITUDE'].yawspeed
 
             output.x = self.master.messages['LOCAL_POSITION_NED'].x
             output.y = self.master.messages['LOCAL_POSITION_NED'].y
