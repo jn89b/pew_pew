@@ -20,17 +20,17 @@ find_package(rclpy REQUIRED)
 
 find_package(rosidl_default_generators REQUIRED)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/Telem.msg"
-  "msg/CtlTraj.msg"
+# rosidl_generate_interfaces(${PROJECT_NAME}
+#   "msg/Telem.msg"
+#   "msg/CtlTraj.msg"
 
-  "srv/AddTwoInts.srv"
-  "srv/SetArmDisarm.srv"
-  "srv/SetGoal.srv"
-  "srv/SetUASType.srv"
-  "srv/SetTakeOff.srv"
-  # "srv/getGSInfo.srv"
- )
+#   "srv/AddTwoInts.srv"
+#   "srv/SetArmDisarm.srv"
+#   "srv/SetGoal.srv"
+#   "srv/SetUASType.srv"
+#   "srv/SetTakeOff.srv"
+#   # "srv/getGSInfo.srv"
+#  )
 
 # # Include Cpp "include" directory
 # include_directories(include)

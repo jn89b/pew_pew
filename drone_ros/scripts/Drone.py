@@ -8,7 +8,7 @@ from rclpy.node import Node
 from drone_ros.quaternion_tools import get_euler_from_quaternion, get_quaternion_from_euler
 from drone_ros.Commander import Commander
 from drone_ros.DroneInfo import DroneInfo
-from drone_ros.msg import Telem, CtlTraj
+from drone_interfaces.msg import Telem, CtlTraj
 # from drone_ros.srv import getGSInfo
 
 from drone_ros.DroneInterfaceModel import DroneInterfaceModel

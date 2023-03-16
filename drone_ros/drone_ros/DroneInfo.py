@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pymavlink import mavutil
-from drone_ros.msg import Telem
+from drone_interfaces.msg import Telem
 from rclpy.node import Node
 import math
 
