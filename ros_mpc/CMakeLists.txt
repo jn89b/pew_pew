@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 #change name of package to this
-project(drone_ros)
+project(ros_mpc)
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -47,12 +47,9 @@ find_package(rosidl_default_generators REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
-  scripts/Drone.py
-  scripts/GSService.py
-  scripts/GSInputClient.py
-  scripts/logger.py
-  # scripts/client_member_function.py
-  # scripts/service_member_function.py
+  scripts/directional_traj.py
+  scripts/avoid_traj.py
+  scripts/waypoint_traj.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()
@@ -61,7 +58,7 @@ ament_package()
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
   set(_pytest_tests
-    tests/testDroneCommander.py
+    # tests/testDroneCommander.py
     # Add other test files here
   )
   foreach(_test_path ${_pytest_tests})
