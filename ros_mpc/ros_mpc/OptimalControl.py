@@ -105,16 +105,16 @@ class OptimalControlProblem():
         #equality constraint for initial condition
         self.g = self.X[:, 0] - self.P[:self.model_casadi.n_states]                  
         for k in range(self.N):
-            state_next_rk4 = self.integrator(self.X[:, k], self.U[:, k])
+            # state_next_rk4 = self.integrator(self.X[:, k], self.U[:, k])
             # state_next_rk4 = self.integrator_fn(self.X[:, k], self.U[:, k])
             
-            # states = self.X[:, k]
-            # controls = self.U[:, k]
-            # k1 = self.model_casadi.function(states, controls)
-            # k2 = self.model_casadi.function(states + self.dt/2 * k1, controls)
-            # k3 = self.model_casadi.function(states + self.dt/2 * k2, controls)
-            # k4 = self.model_casadi.function(states + self.dt * k3, controls)
-            # state_next_rk4 = states + self.dt/6 * (k1 + 2*k2 + 2*k3 + k4)
+            states = self.X[:, k]
+            controls = self.U[:, k]
+            k1 = self.model_casadi.function(states, controls)
+            k2 = self.model_casadi.function(states + self.dt/2 * k1, controls)
+            k3 = self.model_casadi.function(states + self.dt/2 * k2, controls)
+            k4 = self.model_casadi.function(states + self.dt * k3, controls)
+            state_next_rk4 = states + self.dt/6 * (k1 + 2*k2 + 2*k3 + k4)
             # constraint to make sure our dynamics are satisfied
             self.g = ca.vertcat(self.g, self.X[:, k+1] - state_next_rk4) 
         

@@ -8,14 +8,14 @@ import time
 from drone_interfaces.msg import Telem, CtlTraj
 from rclpy.node import Node
 
-from ros_mpc.PlaneOptControl import PlaneOptControl
+from ros_mpc.PlaneOptControl2 import PlaneOptControl2
 from ros_mpc.Effector import Effector
 from ros_mpc.aircraft_config import mpc_params, directional_effector_config, \
     control_constraints, state_constraints, obs_avoid_params
 from ros_mpc.aircraft_config import GOAL_STATE, DONE_STATE
 
 import ros_mpc.rotation_utils as rot_utils
-from ros_mpc.models.Plane import Plane
+from ros_mpc.models.PlaneModel2 import PlaneModel2
 
 """
 - Set Effector Configurations
@@ -68,9 +68,9 @@ class TrajPublisherNode(Node):
         ]
         
         self.control_info = [
+            None, #load_x
+            None, #load_z
             None, #u_phi
-            None, #u_theta
-            None, #u_psi
             None  #v_cmd
         ]
         

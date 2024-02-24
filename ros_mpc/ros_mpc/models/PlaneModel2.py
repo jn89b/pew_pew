@@ -4,8 +4,16 @@ import casadi as ca
 
 from matplotlib import pyplot as plt
 
+"""
+Model based off of 
+Deep reinforcement learning‑based air combat maneuver decision‑making: 
+literature review, implementation tutorial and future direction
 
-class Plane():
+
+Xinwei Wang1 · Yihui Wang1 · Xichao Su2 · Lei Wang3 · Chen Lu4,5,6 · Haijun Peng1 · Jie Liu7
+"""
+
+class PlaneModel2():
     def __init__(self, 
                  include_time:bool=False,
                  dt_val:float=0.05) -> None:
@@ -13,7 +21,6 @@ class Plane():
         self.dt_val = dt_val
         self.define_states()
         self.define_controls() 
-        self.set_state_space()
         
     def define_states(self):
         """define the states of your system"""
@@ -52,54 +59,35 @@ class Plane():
 
     def define_controls(self):
         """controls for your system"""
+        self.load_x = ca.SX.sym('load_x')
+        self.load_z = ca.SX.sym('load_z')
         self.u_phi = ca.SX.sym('u_phi')
-        self.u_theta = ca.SX.sym('u_theta')
-        self.u_psi = ca.SX.sym('u_psi')
         self.v_cmd = ca.SX.sym('v_cmd')
 
         self.controls = ca.vertcat(
-            self.u_phi,
-            self.u_theta,
-            self.u_psi,
+            self.load_x,
+            self.load_z,
+            self.u_phi, #
             self.v_cmd
         )
         self.n_controls = self.controls.size()[0] 
 
     def set_state_space(self):
-        """
-        define the state space of your system
-        Would be interesting to introduce a tau factor to multiply with
-        phi, theta, psi and v_cmd, can use this to simulate the effect of
-        a delay in the control input and maybe use GP to estimate the
-        delay
-        """
-        self.g = 9.81  # m/s^2
-        # body to inertia frame
-        #self.x_fdot = self.v_cmd *  ca.cos(self.theta_f) * ca.cos(self.psi_f)
-        self.x_fdot = self.v_cmd * ca.cos(self.theta_f) * ca.cos(self.psi_f)
+        """define the state space of your system"""
+        self.g = 9.81 #m/s^2
+        #body to inertia frame 
+        self.x_fdot = self.v_cmd * ca.cos(self.theta_f) * ca.cos(self.psi_f) 
         self.y_fdot = self.v_cmd * ca.cos(self.theta_f) * ca.sin(self.psi_f)
         self.z_fdot = -self.v_cmd * ca.sin(self.theta_f)
+        
+        self.phi_fdot   = self.load_x 
+        self.theta_fdot = (self.g/self.v)*(self.load_z*ca.cos(self.u_phi) - ca.cos(self.theta_f))
+        
+        #check if the denominator is zero
+        # self.v_cmd = ca.if_else(self.v_cmd == 0, 1e-6, self.v_cmd)
+        self.psi_fdot = self.g*self.load_z*ca.sin(self.u_phi)/(self.v*ca.cos(self.theta_f))
+        self.v_dot = self.g*(self.load_x - ca.sin(self.theta_f))        
 
-        self.phi_fdot   =   -self.u_phi  - self.phi_f
-        self.theta_fdot =   -self.u_theta - self.theta_f
-        ###!!!!!! From the PAPER ADD A NEGATIVE SIN BECAUSE OF SIGN CONVENTION!!!!!!!###
-        self.psi_fdot   =   -self.g * (ca.tan(self.phi_f) / self.v_cmd)
-        
-        #wrap psi_fdot from -pi to pi
-        # self.psi_fdot = ca.atan2(ca.sin(self.psi_fdot), ca.cos(self.psi_fdot))
-        
-        self.airspeed_fdot = self.v_cmd  
-        # self.t_dot = self.t
-        
-        # self.x_fdot = self.v_cmd * ca.cos(self.theta_f) * ca.cos(self.psi_f)
-        # self.y_fdot = self.v_cmd * ca.cos(self.theta_f) * ca.sin(self.psi_f)
-        # self.z_fdot = self.v_cmd * ca.sin(self.theta_f)
-
-        # self.phi_fdot   =   self.u_phi + self.phi_f
-        # self.theta_fdot =   self.u_theta + self.theta_f 
-        # ###!!!!!! From the PAPER ADD A NEGATIVE SIN BECAUSE OF SIGN CONVENTION!!!!!!!###
-        # self.psi_fdot   =   self.g * (ca.tan(self.phi_f) / self.v_cmd)
-        # self.airspeed_fdot = self.v_cmd # u  
         
         if self.include_time:
             self.z_dot = ca.vertcat(
@@ -109,7 +97,7 @@ class Plane():
                 self.phi_fdot,
                 self.theta_fdot,
                 self.psi_fdot,
-                self.airspeed_fdot
+                self.v_dot
             )
         else:
             self.z_dot = ca.vertcat(
@@ -119,7 +107,7 @@ class Plane():
                 self.phi_fdot,
                 self.theta_fdot,
                 self.psi_fdot,
-                self.airspeed_fdot
+                self.v_dot
             )
 
         #ODE function
@@ -149,9 +137,3 @@ class Plane():
             return next_step
         else:
             return x + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
-    
-    
-
-
-    
-    

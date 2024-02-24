@@ -51,10 +51,10 @@ control_constraints = {
     'u_phi_max':   np.deg2rad(45),
     'u_theta_min':-np.deg2rad(10),
     'u_theta_max': np.deg2rad(10),
-    'u_psi_min':  -np.deg2rad(45),
-    'u_psi_max':   np.deg2rad(45),
-    'v_cmd_min':   15,
-    'v_cmd_max':   30
+    'u_psi_min':  -np.deg2rad(30),
+    'u_psi_max':   np.deg2rad(30),
+    'v_cmd_min':   18,
+    'v_cmd_max':   25
 }
 
 state_constraints = {
@@ -63,17 +63,19 @@ state_constraints = {
     'y_min': -np.inf,
     'y_max': np.inf,
     'z_min': 30,
-    'z_max': 76,
-    'phi_min':  -np.deg2rad(45),
-    'phi_max':   np.deg2rad(45),
-    'theta_min':-np.deg2rad(15),
-    'theta_max': np.deg2rad(15),
-    'airspeed_min': -np.inf,
-    'airspeed_max': np.inf
+    'z_max': 80,
+    'phi_min':  -np.deg2rad(50),
+    'phi_max':   np.deg2rad(50),
+    'theta_min':-np.deg2rad(5),
+    'theta_max': np.deg2rad(5),
+    'airspeed_min': 15,
+    'airspeed_max': 30,
+    'psi_min':  -np.deg2rad(np.inf),
+    'psi_max':   np.deg2rad(np.inf),
 }
 
 mpc_params = {
-    'N': 25,
+    'N': 15,
     'Q': ca.diag([1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0]),
     'R': ca.diag([0.5, 0.8, 1.0, 1.0]),
     'dt': 0.1
