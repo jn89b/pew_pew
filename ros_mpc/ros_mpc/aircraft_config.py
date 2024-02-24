@@ -7,7 +7,7 @@ Future work is to put this in a yaml file and load it for easy access
 """
 
 RADIUS_TARGET = 3.0
-N_OBSTACLES = 2
+N_OBSTACLES = 0
 OBX_MIN_RANGE = 30
 OBX_MAX_RANGE = 200
 OBX_MIN_RADIUS = 3
@@ -20,7 +20,7 @@ SEED_NUMBER = 0
 
 GOAL_STATE = [
     200.0, #x 
-    200.0, #y 
+    0.0, #y 
     50.0,  #z 
     0.0,   #phi 
     0.0,   #theta

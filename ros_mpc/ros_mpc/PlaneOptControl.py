@@ -225,12 +225,12 @@ class PlaneOptControl(OptimalControlProblem):
         else:
             total_avoidance_cost = obs_avoid_weight * ca.sum2(avoidance_cost)
         
-        print('Obstacle avoidance cost computed')
+        # print('Obstacle avoidance cost computed')
         return total_avoidance_cost
     
     def compute_dynamic_threats_cost(self, cost:float) -> None:
         #ego vehicle
-        print('Computing dynamic threats cost')
+        # print('Computing dynamic threats cost')
         x_pos    = self.X[0, :]
         y_pos    = self.X[1, :]
         z_pos    = self.X[2, :]
@@ -508,16 +508,16 @@ class PlaneOptControl(OptimalControlProblem):
     def compute_total_cost(self) -> ca.SX:
         
         if self.use_obstacle_avoidance:
-            print('Using obstacle avoidance')
+            # print('Using obstacle avoidance')
             self.cost += self.compute_obstacle_avoidance_cost()
             
         if self.use_dynamic_threats:
-            print('Using dynamic threats')
+            # print('Using dynamic threats')
             self.cost += self.compute_dynamic_threats_cost(self.cost)
                     
         if self.use_pew_pew:
             if self.Effector.effector_type == 'directional_3d':
-                print('Using directional pew pew')
+                # print('Using directional pew pew')
                 self.cost += self.compute_directional_pew_cost()
 
             elif self.Effector.effector_type == 'omnidirectional':
@@ -544,7 +544,6 @@ class PlaneOptControl(OptimalControlProblem):
         if self.use_obstacle_avoidance:
             # constraints lower bound added 
             if self.use_pew_pew and self.Effector.effector_type == 'directional_3d':
-                print('Using pew pew with obstacle avoidance')
                 num_obstacles = len(self.obs_params['x']) + 1
                 num_constraints = num_obstacles * self.N
                 lbg =  ca.DM.zeros((n_states*(self.N+1)+num_constraints, 1))

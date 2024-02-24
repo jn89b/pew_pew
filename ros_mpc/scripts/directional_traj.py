@@ -80,7 +80,7 @@ class TrajPublisherNode(Node):
 		
 		self.traj_pub = self.create_publisher(
 			CtlTraj, 
-			'trajectory', 
+			'directional_trajectory', 
 			self.pub_freq)
 		
 		if sub_to_mavros:
@@ -231,18 +231,18 @@ def main(args=None) -> None:
 		state_constraints=state_constraints,
 		mpc_params=mpc_params,
 		casadi_model=plane,
-		# use_pew_pew=False,
-		# pew_pew_params=directional_effector_config,
-		# use_obstacle_avoidance=False,
-		# obs_params=obs_avoid_params
+		use_pew_pew=True,
+		pew_pew_params=directional_effector_config,
+		use_obstacle_avoidance=True,
+		obs_params=obs_avoid_params
 	)
 	plane_mpc.init_optimization_problem()   
 
 	counter = 1  
-	print_every = 3
+	print_every = 10
 
 	goal = GOAL_STATE
-	idx_buffer = 3
+	idx_buffer = 2
 	
 	distance_tolerance = 20.0
 	
@@ -280,8 +280,6 @@ def main(args=None) -> None:
 			print('Distance Error: ', distance_error)
 		
 		if distance_error <= distance_tolerance:
-			#kill node
-			#log 
 			traj_node.get_logger().info('Goal Reached Shutting Down Node') 
 			traj_node.destroy_node()
 			rclpy.shutdown()
@@ -289,10 +287,5 @@ def main(args=None) -> None:
 		
 		traj_node.publish_trajectory(solution_results, idx_step)
 		counter += 1
-		# plane_mpc.solve()
-		# plane_mpc.publish_trajectory()
-		# rclpy.spin_once(traj_node)
-	
-
 if __name__=='__main__':
 	main()
