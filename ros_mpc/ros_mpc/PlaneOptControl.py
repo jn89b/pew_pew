@@ -220,10 +220,10 @@ class PlaneOptControl(OptimalControlProblem):
                     self.g = ca.vertcat(self.g, diff[:-1].T)
         
         # total_avoidance_cost = obs_avoid_weight * ca.sumsqr(avoidance_cost)
-        if self.use_pew_pew:
-            total_avoidance_cost = 0
-        else:
-            total_avoidance_cost = obs_avoid_weight * ca.sum2(avoidance_cost)
+        # if self.use_pew_pew:
+        #     total_avoidance_cost = 0
+        # else:
+        #     total_avoidance_cost = obs_avoid_weight * ca.sum2(avoidance_cost)
         
         # print('Obstacle avoidance cost computed')
         return total_avoidance_cost

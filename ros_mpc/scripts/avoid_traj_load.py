@@ -21,7 +21,7 @@ from ros_mpc.aircraft_config import GOAL_STATE, DONE_STATE
 
 import ros_mpc.rotation_utils as rot_utils
 from ros_mpc.models.Plane import Plane
-
+from ros_mpc.models.PlaneModel2 import PlaneModel2
 
 import mavros
 from mavros.base import SENSOR_QOS
@@ -239,17 +239,30 @@ class AvoidTrajNode(Node):
 def main(args=None) -> None:
 	rclpy.init(args=args)    
 
+	### This uses the kinematic model
+	# plane = Plane()
+	# plane_mpc = PlaneOptControl(
+	# 	control_constraints=control_constraints,
+	# 	state_constraints=state_constraints,
+	# 	mpc_params=mpc_params,
+	# 	casadi_model=plane,
+	# 	use_obstacle_avoidance=True,
+	# 	obs_params=obs_avoid_params,
+	# )
+	# plane_mpc.init_optimization_problem()   
 
-	plane = Plane()
-	plane_mpc = PlaneOptControl(
-		control_constraints=control_constraints,
+	### This uses the load factor model 
+	plane = PlaneModel2()
+	plane_mpc = PlaneOptControl2(
+		control_constraints=control_constraints_load,
 		state_constraints=state_constraints,
-		mpc_params=mpc_params,
+		mpc_params=mpc_params_load,
 		casadi_model=plane,
 		use_obstacle_avoidance=True,
 		obs_params=obs_avoid_params,
 	)
-	plane_mpc.init_optimization_problem()   
+
+	plane_mpc.init_optimization_problem()
 
 	counter = 1  
 	print_every = 10

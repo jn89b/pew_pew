@@ -21,6 +21,7 @@ class PlaneModel2():
         self.dt_val = dt_val
         self.define_states()
         self.define_controls() 
+        self.set_state_space()
         
     def define_states(self):
         """define the states of your system"""

@@ -6,12 +6,12 @@ This file contains the aircraft configurations all in one place
 Future work is to put this in a yaml file and load it for easy access
 """
 
-RADIUS_TARGET = 3.0
-N_OBSTACLES = 0
-OBX_MIN_RANGE = 30
-OBX_MAX_RANGE = 200
-OBX_MIN_RADIUS = 3
-OBX_MAX_RADIUS = 5
+RADIUS_TARGET = 2.0
+N_OBSTACLES = 2
+OBX_MIN_RANGE = 50
+OBX_MAX_RANGE = 150
+OBX_MIN_RADIUS = 20
+OBX_MAX_RADIUS = 21
 SEED_NUMBER = 0
 
 
@@ -20,7 +20,7 @@ SEED_NUMBER = 0
 
 GOAL_STATE = [
     200.0, #x 
-    0.0, #y 
+    -200.0, #y 
     50.0,  #z 
     0.0,   #phi 
     0.0,   #theta
@@ -53,8 +53,8 @@ control_constraints = {
     'u_theta_max': np.deg2rad(10),
     'u_psi_min':  -np.deg2rad(30),
     'u_psi_max':   np.deg2rad(30),
-    'v_cmd_min':   18,
-    'v_cmd_max':   25
+    'v_cmd_min':   16,
+    'v_cmd_max':   30
 }
 
 state_constraints = {
@@ -77,7 +77,8 @@ state_constraints = {
 mpc_params = {
     'N': 15,
     'Q': ca.diag([1.0, 1.0, 0.5, 1.0, 1.0, 1.0, 1.0]),
-    'R': ca.diag([0.5, 0.8, 1.0, 1.0]),
+    # 'Q': ca.diag([0.5, 0.5, 0.5, 1.0, 1.0, 1.0, 0.0]),
+    'R': ca.diag([0.5, 0.5, 0.5, 1.0]),
     'dt': 0.1
 }
 
@@ -109,3 +110,39 @@ omni_effector_config = {
         'minor_radius': 32.0
         }
 
+
+mpc_params_load = {
+    'N': 30,
+    'Q': ca.diag([1E-2, 1E-2, 1E-2, 0, 0, 0.0, 0.0]),
+    'R': ca.diag([0.1, 0.1, 0.1, 0.1]),
+    'dt': 0.1
+}
+
+
+control_constraints_load = {
+    'u_phi_min':  -np.deg2rad(45),
+    'u_phi_max':   np.deg2rad(45),
+    'load_z_min': -3,
+    'load_z_max':  6,
+    'load_x_min':  -2, #left 
+    'load_x_max':   2, #right
+    'v_cmd_min':   15,
+    'v_cmd_max':   30
+}
+
+state_constraints_load = {
+    'x_min': -np.inf,
+    'x_max': np.inf,
+    'y_min': -np.inf,
+    'y_max': np.inf,
+    'z_min': 20,
+    'z_max': 80,
+    'phi_min':  -np.deg2rad(45),
+    'phi_max':   np.deg2rad(45),
+    'theta_min':-np.deg2rad(15),
+    'theta_max': np.deg2rad(15),
+    # 'psi_min':  -np.deg2rad(180),
+    # 'psi_max':   np.deg2rad(180),
+    'airspeed_min': 15,
+    'airspeed_max': 30
+}

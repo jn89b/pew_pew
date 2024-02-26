@@ -29,31 +29,14 @@ from mavros.base import SENSOR_QOS
 
 """
 
-# class DirectionalNode(Node):
-#     def __init__(self):
-#         super().__init__('traj_publisher_node')
-#         self.declare_parameters(
-#             namespace='',
-#             parameters=[
-#                 ('N', 20),
-#                 ('Q', [1, 1, 1, 1, 1, 1]),
-#                 ('R', [1, 1]),
-#                 ('dt', 0.1),
-#             ]
-#         )
-#         self.get_params()
-#         self.init_ros()
-#         self.init_mpc()
-#         self.init_effector()
-
-class TrajPublisherNode(Node):
+class DirectionalTrajNode(Node):
 	def __init__(self, 
 				 pub_freq:int=100, 
 				 sub_freq:int=100,
 				 save_states:bool=False,
 				 sub_to_mavros:bool=True):
-		super().__init__('mpc_traj_fw_publisher')
-		self.get_logger().info('Starting MPC Traj FW Publisher')
+		super().__init__('directional_traj_fw_publisher')
+		self.get_logger().info('Starting Directional Traj FW Publisher')
 		
 		self.pub_freq = pub_freq
 		self.sub_freq = sub_freq
@@ -77,6 +60,7 @@ class TrajPublisherNode(Node):
 			None, #u_psi
 			None  #v_cmd
 		]
+
 		
 		self.traj_pub = self.create_publisher(
 			CtlTraj, 
@@ -223,7 +207,7 @@ class TrajPublisherNode(Node):
 def main(args=None) -> None:
 	rclpy.init(args=args)    
 
-	traj_node = TrajPublisherNode()
+	traj_node = DirectionalTrajNode()
 	rclpy.spin_once(traj_node)
 	plane = Plane()
 	plane_mpc = PlaneOptControl(
