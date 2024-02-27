@@ -58,7 +58,7 @@ def generate_launch_description():
         ),
         
         Node(
-            package='umkc_mpc_ros',
+            package='pew_pew',
             namespace=effector_ns,
             executable='effector_frame.py',
             parameters=[

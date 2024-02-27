@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 #change name of package to this
-project(ros_mpc)
+project(pew_pew)
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)
@@ -47,9 +47,14 @@ find_package(rosidl_default_generators REQUIRED)
 ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
-  scripts/directional_traj.py
-  scripts/avoid_traj.py
-  scripts/waypoint_traj.py
+  scripts/omni_node.py
+  scripts/directional_node.py
+  scripts/effector_frame.py
+  scripts/effector_node.py
+  scripts/effector_frame_scaled.py
+  # scripts/directional_traj.py
+  # scripts/avoid_traj.py
+  # scripts/waypoint_traj.py
   DESTINATION lib/${PROJECT_NAME}
 )
 ament_package()

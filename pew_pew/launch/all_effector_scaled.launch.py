@@ -10,9 +10,10 @@ from launch_ros.actions import Node
 def generate_launch_description():
 
     #### Directional #######
-    front_directional_frame = 'front_directional_effector'
-    base_link_frame = 'base_link'
+    front_directional_frame = 'front_directional_effector_scaled'
+    base_link_frame = 'fixed_wing_frame'
     pkl_file_name = 'front_directional_effector.pkl'
+    effector_file_name = 'effector_scaled.launch.py'
     
     front_directional_effector =  {
         'effector_ns': TextSubstitution(text='directional_effector'),
@@ -30,31 +31,17 @@ def generate_launch_description():
     first_effector_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
-                FindPackageShare('umkc_mpc_ros'),
+                FindPackageShare('pew_pew'),
                 'launch',
-                'effector.launch.py'
+                effector_file_name
             ])
         ),
         launch_arguments=front_directional_effector.items()
     )
 
-    #run effector_node
-    front_directional_node = Node(
-        package='umkc_mpc_ros',
-        executable='effector_node.py',
-        name='effector_node',
-        output='screen',
-        parameters=[
-                {'world_frame': 'map' },
-                {'effector_frame': front_directional_frame},
-                {'rate': 30.0},
-                {'pickle_file_name': pkl_file_name}
-        ]
-    )
-
     ####### LEFT WING ##################
     rotated_yaw = str(np.deg2rad(90.0))
-    left_wing_effector_frame = 'left_wing_directional_effector'
+    left_wing_effector_frame = 'left_wing_directional_effector_scaled'
 
     left_wing_directional_effector_params =  {
         'effector_ns': TextSubstitution(text='directional_effector'),
@@ -64,7 +51,7 @@ def generate_launch_description():
         'roll': TextSubstitution(text='0.0'),
         'pitch': TextSubstitution(text='0.0'),
         'yaw': TextSubstitution(text=rotated_yaw),
-        'parent_frame': TextSubstitution(text='base_link'),
+        'parent_frame': TextSubstitution(text=base_link_frame),
         'child_frame': TextSubstitution(text=left_wing_effector_frame),
         'rate': TextSubstitution(text='30.0')
     }
@@ -72,26 +59,14 @@ def generate_launch_description():
     left_wing_effector_frame_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
-                FindPackageShare('umkc_mpc_ros'),
+                FindPackageShare('pew_pew'),
                 'launch',
-                'effector.launch.py'
+                'effector_scaled.launch.py'
+                # effector_file_name
+                # 'effector.launch.py'
             ])
         ),
         launch_arguments=left_wing_directional_effector_params.items()
-    )
-
-    #run effector_node
-    left_directional_node = Node(
-        package='umkc_mpc_ros',
-        executable='effector_node.py',
-        name='effector_node',
-        output='screen',
-        parameters=[
-                {'world_frame': 'map' },
-                {'effector_frame': left_wing_effector_frame},
-                {'rate': 30.0},
-                {'pickle_file_name': 'left_wing_directional_effector.pkl'}
-        ]
     )
 
     # mavros_node = Node(
@@ -104,7 +79,7 @@ def generate_launch_description():
 
     ########### RIGHT WING ################## 
     right_rotated_yaw = str(np.deg2rad(-90.0))
-    right_wing_effector_frame = 'right_wing_directional_effector'
+    right_wing_effector_frame = 'right_wing_directional_effector_scaled'
     right_wing_directional_effector_params =  {
         'effector_ns': TextSubstitution(text='directional_effector'),
         'x': TextSubstitution(text='0.0'),
@@ -113,7 +88,7 @@ def generate_launch_description():
         'roll': TextSubstitution(text='0.0'),
         'pitch': TextSubstitution(text='0.0'),
         'yaw': TextSubstitution(text=right_rotated_yaw),
-        'parent_frame': TextSubstitution(text='base_link'),
+        'parent_frame': TextSubstitution(text=base_link_frame),
         'child_frame': TextSubstitution(text=right_wing_effector_frame),
         'rate': TextSubstitution(text='30.0')
     }
@@ -121,37 +96,19 @@ def generate_launch_description():
     right_wing_effector_frame_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
-                FindPackageShare('umkc_mpc_ros'),
+                FindPackageShare('pew_pew'),
                 'launch',
-                'effector.launch.py'
+                'effector_scaled.launch.py'
             ])
         ),
         launch_arguments=right_wing_directional_effector_params.items()
     )
 
-    right_directional_node = Node(
-        package='umkc_mpc_ros',
-        executable='effector_node.py',
-        name='effector_node',
-        output='screen',
-        parameters=[
-                {'world_frame': 'map' },
-                {'effector_frame': right_wing_effector_frame},
-                {'rate': 30.0},
-                {'pickle_file_name': 'right_wing_directional_effector.pkl'}
-        ]
-    )
-
     #launch stuf
     launch_description = LaunchDescription()
     launch_description.add_action(first_effector_launch)
-    launch_description.add_action(front_directional_node)
-
     launch_description.add_action(left_wing_effector_frame_launch)
-    launch_description.add_action(left_directional_node)    
-    
     launch_description.add_action(right_wing_effector_frame_launch)
-    launch_description.add_action(right_directional_node)
     
     return launch_description
 
